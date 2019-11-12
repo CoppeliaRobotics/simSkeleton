@@ -1,7 +1,7 @@
-#include "v_repExtPluginSkeleton.h"
+#include "simExtPluginSkeleton.h"
 #include "stackArray.h"
 #include "stackMap.h"
-#include "v_repLib.h"
+#include "simLib.h"
 #include <iostream>
 
 #ifdef _WIN32
@@ -24,7 +24,7 @@
 
 #define PLUGIN_VERSION 5 // 2 since version 3.2.1, 3 since V3.3.1, 4 since V3.4.0, 5 since V3.4.1
 
-LIBRARY vrepLib; // the V-REP library that we will dynamically load and bind
+LIBRARY simLib; // the CoppelisSim library that we will dynamically load and bind
 
 // --------------------------------------------------------------------------------------
 // simExtSkeleton_getData: an example of custom Lua command
@@ -63,9 +63,9 @@ void LUA_GETDATA_CALLBACK(SScriptCallBack* p)
 
 
 // This is the plugin start routine (called just once, just after the plugin was loaded):
-VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt)
+SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 {
-    // Dynamically load and bind V-REP functions:
+    // Dynamically load and bind CoppelisSim functions:
     // 1. Figure out this plugin's directory:
     char curDirAndFile[1024];
 #ifdef _WIN32
@@ -80,38 +80,38 @@ VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt)
 #endif
 
     std::string currentDirAndPath(curDirAndFile);
-    // 2. Append the V-REP library's name:
+    // 2. Append the CoppelisSim library's name:
     std::string temp(currentDirAndPath);
 #ifdef _WIN32
-    temp+="\\v_rep.dll";
+    temp+="\\coppeliaSim.dll";
 #elif defined (__linux)
-    temp+="/libv_rep.so";
+    temp+="/libcoppeliaSim.so";
 #elif defined (__APPLE__)
-    temp+="/libv_rep.dylib";
+    temp+="/libcoppeliaSim.dylib";
 #endif /* __linux || __APPLE__ */
-    // 3. Load the V-REP library:
-    vrepLib=loadVrepLibrary(temp.c_str());
-    if (vrepLib==NULL)
+    // 3. Load the CoppelisSim library:
+    simLib=loadSimLibrary(temp.c_str());
+    if (simLib==NULL)
     {
-        std::cout << "Error, could not find or correctly load the V-REP library. Cannot start 'PluginSkeleton' plugin.\n";
-        return(0); // Means error, V-REP will unload this plugin
+        std::cout << "Error, could not find or correctly load the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.\n";
+        return(0); // Means error, CoppelisSim will unload this plugin
     }
-    if (getVrepProcAddresses(vrepLib)==0)
+    if (getSimProcAddresses(simLib)==0)
     {
-        std::cout << "Error, could not find all required functions in the V-REP library. Cannot start 'PluginSkeleton' plugin.\n";
-        unloadVrepLibrary(vrepLib);
-        return(0); // Means error, V-REP will unload this plugin
+        std::cout << "Error, could not find all required functions in the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.\n";
+        unloadSimLibrary(simLib);
+        return(0); // Means error, CoppelisSim will unload this plugin
     }
 
-    // Check the version of V-REP:
-    int vrepVer,vrepRev;
-    simGetIntegerParameter(sim_intparam_program_version,&vrepVer);
-    simGetIntegerParameter(sim_intparam_program_revision,&vrepRev);
-    if( (vrepVer<30400) || ((vrepVer==30400)&&(vrepRev<9)) )
+    // Check the version of CoppelisSim:
+    int simVer,simRev;
+    simGetIntegerParameter(sim_intparam_program_version,&simVer);
+    simGetIntegerParameter(sim_intparam_program_revision,&simRev);
+    if( (simVer<30400) || ((simVer==30400)&&(simRev<9)) )
     {
-        std::cout << "Sorry, your V-REP copy is somewhat old, V-REP 3.4.0 rev9 or higher is required. Cannot start 'PluginSkeleton' plugin.\n";
-        unloadVrepLibrary(vrepLib);
-        return(0); // Means error, V-REP will unload this plugin
+        std::cout << "Sorry, your CoppelisSim copy is somewhat old, CoppelisSim 3.4.0 rev9 or higher is required. Cannot start 'PluginSkeleton' plugin.\n";
+        unloadSimLibrary(simLib);
+        return(0); // Means error, CoppelisSim will unload this plugin
     }
 
     // Implicitely include the script lua/simExtPluginSkeleton.lua:
@@ -123,16 +123,16 @@ VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt)
     return(PLUGIN_VERSION); // initialization went fine, we return the version number of this plugin (can be queried with simGetModuleName)
 }
 
-// This is the plugin end routine (called just once, when V-REP is ending, i.e. releasing this plugin):
-VREP_DLLEXPORT void v_repEnd()
+// This is the plugin end routine (called just once, when CoppelisSim is ending, i.e. releasing this plugin):
+SIM_DLLEXPORT void simEnd()
 {
     // Here you could handle various clean-up tasks
 
-    unloadVrepLibrary(vrepLib); // release the library
+    unloadSimLibrary(simLib); // release the library
 }
 
-// This is the plugin messaging routine (i.e. V-REP calls this function very often, with various messages):
-VREP_DLLEXPORT void* v_repMessage(int message,int* auxiliaryData,void* customData,int* replyData)
+// This is the plugin messaging routine (i.e. CoppelisSim calls this function very often, with various messages):
+SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,int* replyData)
 { // This is called quite often. Just watch out for messages/events you want to handle
     // Keep following 5 lines at the beginning and unchanged:
     static bool refreshDlgFlag=true;
@@ -141,12 +141,12 @@ VREP_DLLEXPORT void* v_repMessage(int message,int* auxiliaryData,void* customDat
     simSetIntegerParameter(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
     void* retVal=NULL;
 
-    // Here we can intercept many messages from V-REP (actually callbacks). Only the most important messages are listed here.
+    // Here we can intercept many messages from CoppelisSim (actually callbacks). Only the most important messages are listed here.
     // For a complete list of messages that you can intercept/react with, search for "sim_message_eventcallback"-type constants
-    // in the V-REP user manual.
+    // in the CoppelisSim user manual.
 
     if (message==sim_message_eventcallback_refreshdialogs)
-        refreshDlgFlag=true; // V-REP dialogs were refreshed. Maybe a good idea to refresh this plugin's dialog too
+        refreshDlgFlag=true; // CoppelisSim dialogs were refreshed. Maybe a good idea to refresh this plugin's dialog too
 
     if (message==sim_message_eventcallback_menuitemselected)
     { // A custom menu bar entry was selected..
@@ -155,7 +155,7 @@ VREP_DLLEXPORT void* v_repMessage(int message,int* auxiliaryData,void* customDat
 
     if (message==sim_message_eventcallback_instancepass)
     {   // This message is sent each time the scene was rendered (well, shortly after) (very often)
-        // It is important to always correctly react to events in V-REP. This message is the most convenient way to do so:
+        // It is important to always correctly react to events in CoppelisSim. This message is the most convenient way to do so:
 
         int flags=auxiliaryData[0];
         bool sceneContentChanged=((flags&(1+2+4+8+16+32+64+256))!=0); // object erased, created, model or scene loaded, und/redo called, instance switched, or object scaled since last sim_message_eventcallback_instancepass message 

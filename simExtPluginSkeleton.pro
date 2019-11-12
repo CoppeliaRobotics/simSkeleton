@@ -1,7 +1,7 @@
 QT -= core
 QT -= gui
 
-TARGET = v_repExtPluginSkeleton
+TARGET = simExtPluginSkeleton
 TEMPLATE = lib
 
 DEFINES -= UNICODE
@@ -35,15 +35,15 @@ INCLUDEPATH += "../include/stack"
 }
 
 win32 {
-    DEFINES += WIN_VREP
+    DEFINES += WIN_SIM
 }
 
 macx {
-    DEFINES += MAC_VREP
+    DEFINES += MAC_SIM
 }
 
 unix:!macx {
-    DEFINES += LIN_VREP
+    DEFINES += LIN_SIM
 }
 
 unix:!symbian {
@@ -56,7 +56,7 @@ unix:!symbian {
 }
 
 HEADERS += \
-    v_repExtPluginSkeleton.h \
+    simExtPluginSkeleton.h \
     ../include/stack/stackBool.h \
     ../include/stack/stackNull.h \
     ../include/stack/stackNumber.h \
@@ -64,10 +64,10 @@ HEADERS += \
     ../include/stack/stackArray.h \
     ../include/stack/stackMap.h \
     ../include/stack/stackObject.h \
-    ../include/v_repLib.h
+    ../include/simLib.h
 
 SOURCES += \
-    v_repExtPluginSkeleton.cpp \
+    simExtPluginSkeleton.cpp \
     ../common/stack/stackBool.cpp \
     ../common/stack/stackNull.cpp \
     ../common/stack/stackNumber.cpp \
@@ -75,7 +75,7 @@ SOURCES += \
     ../common/stack/stackArray.cpp \
     ../common/stack/stackMap.cpp \
     ../common/stack/stackObject.cpp \
-    ../common/v_repLib.cpp
+    ../common/simLib.cpp
 
 
 
