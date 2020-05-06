@@ -24,7 +24,20 @@
 
 #define PLUGIN_VERSION 5 // 2 since version 3.2.1, 3 since V3.3.1, 4 since V3.4.0, 5 since V3.4.1
 
-LIBRARY simLib; // the CoppelisSim library that we will dynamically load and bind
+static LIBRARY simLib; // the CoppelisSim library that we will dynamically load and bind
+
+bool canOutputMsg(int msgType)
+{ // to check if you should output something to the terminal
+    int plugin_verbosity = sim_verbosity_default;
+    simGetModuleInfo("Cam",sim_moduleinfo_verbosity,nullptr,&plugin_verbosity);
+    return(plugin_verbosity>=msgType);
+}
+
+void outputMsg(int msgType,const char* msg)
+{ // conditionally output something to the terminal
+    if (canOutputMsg(msgType))
+        printf("%s\n",msg);
+}
 
 // --------------------------------------------------------------------------------------
 // simExtSkeleton_getData: an example of custom Lua command
@@ -93,12 +106,12 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simLib=loadSimLibrary(temp.c_str());
     if (simLib==NULL)
     {
-        std::cout << "Error, could not find or correctly load the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.\n";
+        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton plugin error: could not find or correctly load the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.");
         return(0); // Means error, CoppelisSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        std::cout << "Error, could not find all required functions in the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.\n";
+        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton plugin error: could not find all required functions in the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
@@ -109,7 +122,7 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simGetIntegerParameter(sim_intparam_program_revision,&simRev);
     if( (simVer<30400) || ((simVer==30400)&&(simRev<9)) )
     {
-        std::cout << "Sorry, your CoppelisSim copy is somewhat old, CoppelisSim 3.4.0 rev9 or higher is required. Cannot start 'PluginSkeleton' plugin.\n";
+        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton plugin error: sorry, your CoppelisSim copy is somewhat old, CoppelisSim 4.0.0 rev1 or higher is required. Cannot start 'PluginSkeleton' plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
