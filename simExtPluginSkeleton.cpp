@@ -29,7 +29,7 @@ static LIBRARY simLib; // the CoppelisSim library that we will dynamically load 
 bool canOutputMsg(int msgType)
 { // to check if you should output something to the terminal
     int plugin_verbosity = sim_verbosity_default;
-    simGetModuleInfo("Cam",sim_moduleinfo_verbosity,nullptr,&plugin_verbosity);
+    simGetModuleInfo("PluginSkeleton",sim_moduleinfo_verbosity,nullptr,&plugin_verbosity);
     return(plugin_verbosity>=msgType);
 }
 
