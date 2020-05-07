@@ -55,7 +55,8 @@ void LUA_GETDATA_CALLBACK(SScriptCallBack* p)
     { // we expect at least 2 arguments: a string and a map
 
         CStackMap* map=inArguments.getMap(1);
-        printf("We received a string (%s) and following message in the map: %s\n",inArguments.getString(0).c_str(),map->getString("message").c_str());
+        if (canOutputMsg(sim_verbosity_msgs))
+            printf("simExtPluginSkeleton: msg: we received a string (%s) and following message in the map: %s\n",inArguments.getString(0).c_str(),map->getString("message").c_str());
     }
     else
         simSetLastError(LUA_GETDATA_COMMAND,"Not enough arguments or wrong arguments.");
@@ -106,12 +107,12 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simLib=loadSimLibrary(temp.c_str());
     if (simLib==NULL)
     {
-        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton plugin error: could not find or correctly load the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.");
+        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton: error: could not find or correctly load the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.");
         return(0); // Means error, CoppelisSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton plugin error: could not find all required functions in the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.");
+        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton: error: could not find all required functions in the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
@@ -122,7 +123,7 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simGetIntegerParameter(sim_intparam_program_revision,&simRev);
     if( (simVer<30400) || ((simVer==30400)&&(simRev<9)) )
     {
-        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton plugin error: sorry, your CoppelisSim copy is somewhat old, CoppelisSim 4.0.0 rev1 or higher is required. Cannot start 'PluginSkeleton' plugin.");
+        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton: error: sorry, your CoppelisSim copy is somewhat old, CoppelisSim 4.0.0 rev1 or higher is required. Cannot start 'PluginSkeleton' plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
