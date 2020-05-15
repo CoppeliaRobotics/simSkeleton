@@ -26,19 +26,6 @@
 
 static LIBRARY simLib; // the CoppelisSim library that we will dynamically load and bind
 
-bool canOutputMsg(int msgType)
-{ // to check if you should output something to the terminal
-    int plugin_verbosity = sim_verbosity_default;
-    simGetModuleInfo("PluginSkeleton",sim_moduleinfo_verbosity,nullptr,&plugin_verbosity);
-    return(plugin_verbosity>=msgType);
-}
-
-void outputMsg(int msgType,const char* msg)
-{ // conditionally output something to the terminal
-    if (canOutputMsg(msgType))
-        printf("%s\n",msg);
-}
-
 // --------------------------------------------------------------------------------------
 // simExtSkeleton_getData: an example of custom Lua command
 // --------------------------------------------------------------------------------------
@@ -55,8 +42,11 @@ void LUA_GETDATA_CALLBACK(SScriptCallBack* p)
     { // we expect at least 2 arguments: a string and a map
 
         CStackMap* map=inArguments.getMap(1);
-        if (canOutputMsg(sim_verbosity_msgs))
-            printf("simExtPluginSkeleton: msg: we received a string (%s) and following message in the map: %s\n",inArguments.getString(0).c_str(),map->getString("message").c_str());
+        std::string tmp("we received a string (");
+        tmp+=inArguments.getString(0).c_str();
+        tmp+=") and following message in the map: ";
+        tmp+=map->getString("message").c_str();
+        simAddLog("PluginSkeleton",sim_verbosity_msgs,tmp.c_str());
     }
     else
         simSetLastError(LUA_GETDATA_COMMAND,"Not enough arguments or wrong arguments.");
@@ -107,12 +97,12 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simLib=loadSimLibrary(temp.c_str());
     if (simLib==NULL)
     {
-        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton: error: could not find or correctly load the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.");
+        simAddLog("PluginSkeleton",sim_verbosity_errors,"could not find or correctly load the CoppeliaSim library. Cannot start the plugin.");
         return(0); // Means error, CoppelisSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton: error: could not find all required functions in the CoppelisSim library. Cannot start 'PluginSkeleton' plugin.");
+        simAddLog("PluginSkeleton",sim_verbosity_errors,"could not find all required functions in the CoppeliaSim library. Cannot start the plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
@@ -121,9 +111,9 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     int simVer,simRev;
     simGetIntegerParameter(sim_intparam_program_version,&simVer);
     simGetIntegerParameter(sim_intparam_program_revision,&simRev);
-    if( (simVer<30400) || ((simVer==30400)&&(simRev<9)) )
+    if( (simVer<40000) || ((simVer==40000)&&(simRev<1)) )
     {
-        outputMsg(sim_verbosity_errors,"simExtPluginSkeleton: error: sorry, your CoppelisSim copy is somewhat old, CoppelisSim 4.0.0 rev1 or higher is required. Cannot start 'PluginSkeleton' plugin.");
+        simAddLog("PluginSkeleton",sim_verbosity_errors,"sorry, your CoppelisSim copy is somewhat old, CoppelisSim 4.0.0 rev1 or higher is required. Cannot start the plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
