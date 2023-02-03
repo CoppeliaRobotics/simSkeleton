@@ -8,7 +8,6 @@ DEFINES -= UNICODE
 DEFINES += QT_COMPIL
 CONFIG += shared plugin
 INCLUDEPATH += "../include"
-INCLUDEPATH += "../include/stack"
 
 *-msvc* {
     QMAKE_CXXFLAGS += -O2
@@ -68,14 +67,14 @@ HEADERS += \
 
 SOURCES += \
     simExtPluginSkeleton.cpp \
-    ../common/stack/stackBool.cpp \
-    ../common/stack/stackNull.cpp \
-    ../common/stack/stackNumber.cpp \
-    ../common/stack/stackString.cpp \
-    ../common/stack/stackArray.cpp \
-    ../common/stack/stackMap.cpp \
-    ../common/stack/stackObject.cpp \
-    ../common/simLib.cpp
+    ../include/stack/stackBool.cpp \
+    ../include/stack/stackNull.cpp \
+    ../include/stack/stackNumber.cpp \
+    ../include/stack/stackString.cpp \
+    ../include/stack/stackArray.cpp \
+    ../include/stack/stackMap.cpp \
+    ../include/stack/stackObject.cpp \
+    ../include/simLib.cpp
 
 
 
