@@ -1,7 +1,7 @@
 #include "simExtPluginSkeleton.h"
 #include <simStack/stackArray.h>
 #include <simStack/stackMap.h>
-#include <simLib.h>
+#include <simLib/simLib.h>
 #include <iostream>
 
 #ifdef _WIN32
