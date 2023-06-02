@@ -1,3 +1,3 @@
-local simSkeleton=loadPlugin('simSkeleton')
+local simSkeleton=loadPlugin'simSkeleton';
 
 return simSkeleton
