@@ -1,4 +1,4 @@
-#include "simExtPluginSkeleton.h"
+#include <simSkeleton.h>
 #include <simStack/stackArray.h>
 #include <simStack/stackMap.h>
 #include <simLib/simLib.h>
@@ -19,20 +19,15 @@
     #define _stricmp(x,y) strcasecmp(x,y)
 #endif
 
-#define CONCAT(x,y,z) x y z
-#define strConCat(x,y,z)    CONCAT(x,y,z)
-
-#define PLUGIN_VERSION 5 // 2 since version 3.2.1, 3 since V3.3.1, 4 since V3.4.0, 5 since V3.4.1
+#define PLUGIN_VERSION 6 // 2 since version 3.2.1, 3 since V3.3.1, 4 since V3.4.0, 5 since V3.4.1, 6 since V4.6
 
 static LIBRARY simLib; // the CoppelisSim library that we will dynamically load and bind
 
 // --------------------------------------------------------------------------------------
-// simExtSkeleton_getData: an example of custom Lua command
+// simSkeleton.getData: an example of custom Lua command
 // --------------------------------------------------------------------------------------
-#define LUA_GETDATA_COMMAND "simSkeleton.getData" // the name of the new Lua command
-
 void LUA_GETDATA_CALLBACK(SScriptCallBack* p)
-{ // the callback function of the new Lua command ("simExtSkeleton_getData")
+{ // the callback function of the new Lua command ("simSkeleton.getData")
     int stack=p->stackID;
 
     CStackArray inArguments;
@@ -40,7 +35,6 @@ void LUA_GETDATA_CALLBACK(SScriptCallBack* p)
 
     if ( (inArguments.getSize()>=2)&&inArguments.isString(0)&&inArguments.isMap(1) )
     { // we expect at least 2 arguments: a string and a map
-
         CStackMap* map=inArguments.getMap(1);
         std::string tmp("we received a string (");
         tmp+=inArguments.getString(0).c_str();
@@ -49,7 +43,7 @@ void LUA_GETDATA_CALLBACK(SScriptCallBack* p)
         simAddLog("PluginSkeleton",sim_verbosity_msgs,tmp.c_str());
     }
     else
-        simSetLastError(LUA_GETDATA_COMMAND,"Not enough arguments or wrong arguments.");
+        simSetLastError(nullptr,"Not enough arguments or wrong arguments.");
 
     // Now return a string and a map:
     CStackArray outArguments;
@@ -67,7 +61,7 @@ void LUA_GETDATA_CALLBACK(SScriptCallBack* p)
 
 
 // This is the plugin start routine (called just once, just after the plugin was loaded):
-SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
+SIM_DLLEXPORT int simInit(const char* pluginName)
 {
     // Dynamically load and bind CoppelisSim functions:
     // 1. Figure out this plugin's directory:
@@ -97,38 +91,35 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
     simLib=loadSimLibrary(temp.c_str());
     if (simLib==NULL)
     {
-        printf("simExtPluginSkeleton: error: could not find or correctly load the CoppeliaSim library. Cannot start the plugin.\n"); // cannot use simAddLog here.
+        simAddLog(pluginName,sim_verbosity_errors,"could not find or correctly load the CoppeliaSim library. Cannot start the plugin.");
         return(0); // Means error, CoppelisSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        printf("simExtPluginSkeleton: error: could not find all required functions in the CoppeliaSim library. Cannot start the plugin.\n"); // cannot use simAddLog here.
+        simAddLog(pluginName,sim_verbosity_errors,"could not find all required functions in the CoppeliaSim library. Cannot start the plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
 
     // Check the version of CoppelisSim:
     int simVer,simRev;
-    simGetIntegerParameter(sim_intparam_program_version,&simVer);
-    simGetIntegerParameter(sim_intparam_program_revision,&simRev);
+    simGetInt32Param(sim_intparam_program_version,&simVer);
+    simGetInt32Param(sim_intparam_program_revision,&simRev);
     if( (simVer<40000) || ((simVer==40000)&&(simRev<1)) )
     {
-        simAddLog("PluginSkeleton",sim_verbosity_errors,"sorry, your CoppelisSim copy is somewhat old, CoppelisSim 4.0.0 rev1 or higher is required. Cannot start the plugin.");
+        simAddLog(pluginName,sim_verbosity_errors,"sorry, your CoppelisSim copy is somewhat old, CoppelisSim 4.0.0 rev1 or higher is required. Cannot start the plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
 
-    // Implicitely include the script lua/simExtPluginSkeleton.lua:
-    simRegisterScriptVariable("simSkeleton","require('simExtPluginSkeleton')",0);
-
     // Register the new function:
-    simRegisterScriptCallbackFunction(strConCat(LUA_GETDATA_COMMAND,"@","PluginSkeleton"),strConCat("...=",LUA_GETDATA_COMMAND,"(string data1,map data2)"),LUA_GETDATA_CALLBACK);
+    simRegisterScriptCallbackFunction("getData",nullptr,LUA_GETDATA_CALLBACK);
 
     return(PLUGIN_VERSION); // initialization went fine, we return the version number of this plugin (can be queried with simGetModuleName)
 }
 
 // This is the plugin end routine (called just once, when CoppelisSim is ending, i.e. releasing this plugin):
-SIM_DLLEXPORT void simEnd()
+SIM_DLLEXPORT void simCleanup()
 {
     // Here you could handle various clean-up tasks
 
@@ -136,10 +127,8 @@ SIM_DLLEXPORT void simEnd()
 }
 
 // This is the plugin messaging routine (i.e. CoppelisSim calls this function very often, with various messages):
-SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,int* replyData)
+SIM_DLLEXPORT void simMsg(int message,int* auxData,void* pointerData)
 { // This is called quite often. Just watch out for messages/events you want to handle
-    void* retVal=NULL;
-
     // Here we can intercept many messages from CoppelisSim. Only the most important messages are listed here.
     // For a complete list of messages that you can intercept/react with, search for "sim_message_eventcallback"-type constants
     // in the CoppelisSim user manual.
@@ -147,11 +136,6 @@ SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,i
     if (message==sim_message_eventcallback_instancepass)
     {   // This message is sent each time the scene was rendered (well, shortly after) (very often)
 
-    }
-
-    if (message==sim_message_eventcallback_mainscriptabouttobecalled)
-    { // The main script is about to be run (only called while a simulation is running (and not paused!))
-        
     }
 
     if (message==sim_message_eventcallback_simulationabouttostart)
@@ -163,46 +147,6 @@ SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,i
     { // Simulation just ended
 
     }
-    
-    if ( (message==sim_message_eventcallback_simulationinit)&&(auxiliaryData[0]==0) )
-    { // the main script's init section is about to be executed
-
-    }
-
-    if ( (message==sim_message_eventcallback_simulationinit)&&(auxiliaryData[0]==1) )
-    { // the main script's init section was executed
-
-    }
-    
-    if ( (message==sim_message_eventcallback_simulationactuation)&&(auxiliaryData[0]==0) )
-    { // the main script's actuation section is about to be executed
-
-    }
-
-    if ( (message==sim_message_eventcallback_simulationactuation)&&(auxiliaryData[0]==1) )
-    { // the main script's actuation section was executed
-
-    }
-    
-    if ( (message==sim_message_eventcallback_simulationsensing)&&(auxiliaryData[0]==0) )
-    { // the main script's sensing section is about to be executed
-
-    }
-
-    if ( (message==sim_message_eventcallback_simulationsensing)&&(auxiliaryData[0]==1) )
-    { // the main script's sensing section was executed
-
-    }
-
-    if ( (message==sim_message_eventcallback_simulationcleanup)&&(auxiliaryData[0]==0) )
-    { // the main script's cleanup section is about to be executed
-
-    }
-
-    if ( (message==sim_message_eventcallback_simulationcleanup)&&(auxiliaryData[0]==1) )
-    { // the main script's cleanup section was executed
-
-    }
 
     if (message==sim_message_eventcallback_instanceswitch)
     { // We switched to a different scene. Such a switch can only happen while simulation is not running
@@ -210,7 +154,5 @@ SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,i
     }
 
     // You can add many more messages to handle here
-
-    return(retVal);
 }
 

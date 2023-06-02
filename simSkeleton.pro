@@ -1,7 +1,7 @@
 QT -= core
 QT -= gui
 
-TARGET = simExtPluginSkeleton
+TARGET = simSkeleton
 TEMPLATE = lib
 
 DEFINES -= UNICODE
@@ -56,26 +56,26 @@ unix:!symbian {
 }
 
 HEADERS += \
-    simExtPluginSkeleton.h \
-    ../include/stack/stackBool.h \
-    ../include/stack/stackNull.h \
-    ../include/stack/stackNumber.h \
-    ../include/stack/stackString.h \
-    ../include/stack/stackArray.h \
-    ../include/stack/stackMap.h \
-    ../include/stack/stackObject.h \
-    ../include/simLib.h
+    simSkeleton.h \
+    ../include/simStack/stackBool.h \
+    ../include/simStack/stackNull.h \
+    ../include/simStack/stackNumber.h \
+    ../include/simStack/stackString.h \
+    ../include/simStack/stackArray.h \
+    ../include/simStack/stackMap.h \
+    ../include/simStack/stackObject.h \
+    ../include/simLib/simLib.h
 
 SOURCES += \
-    simExtPluginSkeleton.cpp \
-    ../include/stack/stackBool.cpp \
-    ../include/stack/stackNull.cpp \
-    ../include/stack/stackNumber.cpp \
-    ../include/stack/stackString.cpp \
-    ../include/stack/stackArray.cpp \
-    ../include/stack/stackMap.cpp \
-    ../include/stack/stackObject.cpp \
-    ../include/simLib.cpp
+    simSkeleton.cpp \
+    ../include/simStack/stackBool.cpp \
+    ../include/simStack/stackNull.cpp \
+    ../include/simStack/stackNumber.cpp \
+    ../include/simStack/stackString.cpp \
+    ../include/simStack/stackArray.cpp \
+    ../include/simStack/stackMap.cpp \
+    ../include/simStack/stackObject.cpp \
+    ../include/simLib/simLib.cpp
 
 
 
