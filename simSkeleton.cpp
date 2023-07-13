@@ -4,21 +4,6 @@
 #include <simLib/simLib.h>
 #include <iostream>
 
-#ifdef _WIN32
-    #ifdef QT_COMPIL
-        #include <direct.h>
-    #else
-        #include <shlwapi.h>
-        #pragma comment(lib, "Shlwapi.lib")
-    #endif
-#endif
-
-#if defined(__linux) || defined(__APPLE__)
-    #include <unistd.h>
-    #include <string.h>
-    #define _stricmp(x,y) strcasecmp(x,y)
-#endif
-
 #define PLUGIN_VERSION 6 // 2 since version 3.2.1, 3 since V3.3.1, 4 since V3.4.0, 5 since V3.4.1, 6 since V4.6
 
 static LIBRARY simLib; // the CoppelisSim library that we will dynamically load and bind
@@ -61,42 +46,18 @@ void LUA_GETDATA_CALLBACK(SScriptCallBack* p)
 
 
 // This is the plugin start routine (called just once, just after the plugin was loaded):
-SIM_DLLEXPORT int simInit(const char* pluginName)
+SIM_DLLEXPORT int simInit(SSimInit* info)
 {
     // Dynamically load and bind CoppelisSim functions:
-    // 1. Figure out this plugin's directory:
-    char curDirAndFile[1024];
-#ifdef _WIN32
-    #ifdef QT_COMPIL
-        _getcwd(curDirAndFile, sizeof(curDirAndFile));
-    #else
-        GetModuleFileName(NULL,curDirAndFile,1023);
-        PathRemoveFileSpec(curDirAndFile);
-    #endif
-#else
-    getcwd(curDirAndFile, sizeof(curDirAndFile));
-#endif
-
-    std::string currentDirAndPath(curDirAndFile);
-    // 2. Append the CoppelisSim library's name:
-    std::string temp(currentDirAndPath);
-#ifdef _WIN32
-    temp+="\\coppeliaSim.dll";
-#elif defined (__linux)
-    temp+="/libcoppeliaSim.so";
-#elif defined (__APPLE__)
-    temp+="/libcoppeliaSim.dylib";
-#endif /* __linux || __APPLE__ */
-    // 3. Load the CoppelisSim library:
-    simLib=loadSimLibrary(temp.c_str());
+    simLib=loadSimLibrary(info->coppeliaSimLibPath);
     if (simLib==NULL)
     {
-        simAddLog(pluginName,sim_verbosity_errors,"could not find or correctly load the CoppeliaSim library. Cannot start the plugin.");
+        simAddLog(info->pluginName,sim_verbosity_errors,"could not find or correctly load the CoppeliaSim library. Cannot start the plugin.");
         return(0); // Means error, CoppelisSim will unload this plugin
     }
     if (getSimProcAddresses(simLib)==0)
     {
-        simAddLog(pluginName,sim_verbosity_errors,"could not find all required functions in the CoppeliaSim library. Cannot start the plugin.");
+        simAddLog(info->pluginName,sim_verbosity_errors,"could not find all required functions in the CoppeliaSim library. Cannot start the plugin.");
         unloadSimLibrary(simLib);
         return(0); // Means error, CoppelisSim will unload this plugin
     }
@@ -127,32 +88,44 @@ SIM_DLLEXPORT void simCleanup()
 }
 
 // This is the plugin messaging routine (i.e. CoppelisSim calls this function very often, with various messages):
-SIM_DLLEXPORT void simMsg(int message,int* auxData,void* pointerData)
+SIM_DLLEXPORT void simMsg(SSimMsg* info)
 { // This is called quite often. Just watch out for messages/events you want to handle
     // Here we can intercept many messages from CoppelisSim. Only the most important messages are listed here.
     // For a complete list of messages that you can intercept/react with, search for "sim_message_eventcallback"-type constants
     // in the CoppelisSim user manual.
 
-    if (message==sim_message_eventcallback_instancepass)
+    if (info->msgId==sim_message_eventcallback_instancepass)
     {   // This message is sent each time the scene was rendered (well, shortly after) (very often)
 
     }
 
-    if (message==sim_message_eventcallback_simulationabouttostart)
+    if (info->msgId==sim_message_eventcallback_simulationabouttostart)
     { // Simulation is about to start
 
     }
 
-    if (message==sim_message_eventcallback_simulationended)
+    if (info->msgId==sim_message_eventcallback_simulationended)
     { // Simulation just ended
 
     }
 
-    if (message==sim_message_eventcallback_instanceswitch)
+    if (info->msgId==sim_message_eventcallback_instanceswitch)
     { // We switched to a different scene. Such a switch can only happen while simulation is not running
 
     }
 
     // You can add many more messages to handle here
+}
+
+SIM_DLLEXPORT void simInit_ui()
+{
+}
+
+SIM_DLLEXPORT void simCleanup_ui()
+{
+}
+
+SIM_DLLEXPORT void simMsg_ui(SSimMsg_ui*)
+{
 }
 
