@@ -18,7 +18,7 @@ coppeliasim_add_plugin(
     simSkeleton
     LEGACY
     SOURCES
-    simSkeleton.cpp
+    sourceCode/simSkeleton.cpp
 )
-coppeliasim_add_lua(simSkeleton.lua)
-coppeliasim_add_lua(simSkeleton-ce.lua)
+coppeliasim_add_lua(lua/simSkeleton.lua)
+coppeliasim_add_lua(lua/simSkeleton-ce.lua)
